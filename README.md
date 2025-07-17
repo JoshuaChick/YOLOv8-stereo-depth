@@ -1,9 +1,9 @@
 # Run
 ```
-git clone https://github.com/JoshuaChick/Yolov8StereoDepth
+git clone https://github.com/JoshuaChick/YOLOv8-stereo-depth
 ```
 ```
-cd Yolov8StereoDepth
+cd YOLOv8-stereo-depth
 ```
 ```
 pip3 install -r requirements.txt
