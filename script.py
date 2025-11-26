@@ -1,12 +1,12 @@
 import math
 import torch
 import cv2
-import time
+import torch.serialization
 from ultralytics import YOLO
 
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-model = YOLO('yolov8x.pt').to(device)
+model = YOLO("yolov8x.pt").to(device)
 
 # yolo outputs classes as numbers, this translates that to strings
 num_to_name = {0: 'person', 1: 'bicycle', 2: 'car', 3: 'motorcycle', 4: 'airplane', 5: 'bus', 6: 'train', 7: 'truck', 8: 'boat', 9: 'traffic light', 10: 'fire hydrant', 11: 'stop sign', 12: 'parking meter', 13: 'bench', 14: 'bird', 15: 'cat', 16: 'dog', 17: 'horse', 18: 'sheep', 19: 'cow', 20: 'elephant', 21: 'bear', 22: 'zebra', 23: 'giraffe', 24: 'backpack', 25: 'umbrella', 26: 'handbag', 27: 'tie', 28: 'suitcase', 29: 'frisbee', 30: 'skis', 31: 'snowboard', 32: 'sports ball', 33: 'kite', 34: 'baseball bat', 35: 'baseball glove', 36: 'skateboard', 37: 'surfboard', 38: 'tennis racket', 39: 'bottle', 40: 'wine glass', 41: 'cup', 42: 'fork', 43: 'knife', 44: 'spoon', 45: 'bowl', 46: 'banana', 47: 'apple', 48: 'sandwich', 49: 'orange', 50: 'broccoli', 51: 'carrot', 52: 'hot dog', 53: 'pizza', 54: 'donut', 55: 'cake', 56: 'chair', 57: 'couch', 58: 'potted plant', 59: 'bed', 60: 'dining table', 61: 'toilet', 62: 'tv', 63: 'laptop', 64: 'mouse', 65: 'remote', 66: 'keyboard', 67: 'cell phone', 68: 'microwave', 69: 'oven', 70: 'toaster', 71: 'sink', 72: 'refrigerator', 73: 'book', 74: 'clock', 75: 'vase', 76: 'scissors', 77: 'teddy bear', 78: 'hair drier', 79: 'toothbrush'}
@@ -19,7 +19,7 @@ for key in num_to_name:
 # which is what most stereoscopic cameras will do)
 STEREO_CAM_WIDTH = 2560
 STEREO_CAM_HEIGHT = 960
-# camera fov in degrees, for horizontal and vertical, max should be 180.
+# camera fov in degrees, for horizontal and vertical, max should be 180
 INDIVIDUAL_CAMERA_FOV_X = 120
 INDIVIDUAL_CAMERA_FOV_Y = 60
 # distance between cameras, cms
@@ -50,8 +50,8 @@ def determine_depths(left_yolo_results, right_yolo_results):
     order of the right_yolo_results (e.g., if first depth is 1m and first object in results is person -> person is
     1m away).
     """
-    left_boxes = left_yolo_results[0].boxes
-    right_boxes = right_yolo_results[0].boxes
+    left_boxes = left_yolo_results.boxes
+    right_boxes = right_yolo_results.boxes
 
     # list of depths for each object in right image. Will be returned at end
     list_right_object_depths = []
@@ -156,8 +156,6 @@ def determine_depth(obj_center_coords_left_cam, obj_center_coords_right_cam):
     else:
         angle_of_obj_btwn_horizon_los_r_cam = 90 - (int((obj_centre_y_r / height_img) * INDIVIDUAL_CAMERA_FOV_Y) + angle_to_start_of_fov_y)
 
-
-
     ##### TRIG SECTION #####
     # x goes across camera, y goes up camera, z plane goes into camera. x z only means line to object w/o accounting for
     # drop or elevation (i.e., no y plane)
@@ -173,8 +171,6 @@ def determine_depth(obj_center_coords_left_cam, obj_center_coords_right_cam):
             # this works for both los being above and below horizon line
             return x_z_only_line_from_right / if_zero_return_epsilon(math.cos(math.radians(angle_of_obj_btwn_horizon_los_r_cam)))
 
-
-
     # 2. object lies on v. centre line of right camera
     elif obj_centre_x_r == centre_x_of_cam:
         if obj_centre_x_l <= centre_x_of_cam:
@@ -186,15 +182,11 @@ def determine_depth(obj_center_coords_left_cam, obj_center_coords_right_cam):
         else:
             return x_z_only_line_from_right / if_zero_return_epsilon(math.cos(math.radians(angle_of_obj_btwn_horizon_los_r_cam)))
 
-
-
     # 3. object lies between v. centres of left and right cameras
     elif obj_centre_x_r < centre_x_of_cam and obj_centre_x_l > centre_x_of_cam:
         line_from_r_between_board_and_r_los = DISTANCE_BETWEEN_CAMERAS * math.sin(math.radians(angle_of_obj_btwn_board_los_l_cam))
         x_z_only_line_from_right = line_from_r_between_board_and_r_los / if_zero_return_epsilon(math.sin(math.radians(angle_at_obj)))
         return x_z_only_line_from_right / if_zero_return_epsilon(math.cos(math.radians(angle_of_obj_btwn_horizon_los_r_cam)))
-
-
 
     # 4. object lies left of v. centre of left camera (and hence should be left of centre of right)
     elif obj_centre_x_l < centre_x_of_cam:
@@ -205,8 +197,6 @@ def determine_depth(obj_center_coords_left_cam, obj_center_coords_right_cam):
         second_part_of_x_z_only_line_from_right = line_from_l_between_board_and_l_los / if_zero_return_epsilon(math.tan(math.radians(angle_at_obj)))
         x_z_only_line_from_right = first_part_of_x_z_only_line_from_right + second_part_of_x_z_only_line_from_right
         return x_z_only_line_from_right / if_zero_return_epsilon(math.cos(math.radians(angle_of_obj_btwn_horizon_los_r_cam)))
-
-
 
     # 5. object lies right of v. centre of right camera (and hence should be right of centre of left)
     elif obj_centre_x_r > centre_x_of_cam:
@@ -225,16 +215,17 @@ if __name__ == '__main__':
     cam.set(cv2.CAP_PROP_FRAME_WIDTH, STEREO_CAM_WIDTH)
     cam.set(cv2.CAP_PROP_FRAME_HEIGHT, STEREO_CAM_HEIGHT)
 
-    start = time.time()
-    
-    while time.time() - start <= 120:
+    while True:
         ret, frame = cam.read()
 
         l, r = split_camera_feed(frame)
 
-        l_results = model(l, verbose=False)
-        r_results = model(r, verbose=False)
-        r_boxes = r_results[0].boxes
+        batch_results = model([l, r], verbose=False)
+
+        l_results = batch_results[0]
+        r_results = batch_results[1]
+
+        r_boxes = r_results.boxes
 
         r_depths = determine_depths(l_results, r_results)
 
@@ -271,7 +262,9 @@ if __name__ == '__main__':
                 cv2.putText(r, f'{num_to_name[int(c)]} {depth_text}', (x_1 + 10, y_1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
         cv2.imshow('', r)
-        cv2.waitKey(1)
+        key = cv2.waitKey(1)
+        if key == ord('q'):
+            break
 
     cam.release()
     cv2.destroyAllWindows()
