@@ -1,7 +1,6 @@
 import math
 import torch
 import cv2
-import torch.serialization
 from ultralytics import YOLO
 
 
