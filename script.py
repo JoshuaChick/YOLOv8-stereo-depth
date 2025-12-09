@@ -16,8 +16,8 @@ for key in num_to_name:
 
 # resolution of the stereoscopic camera (assumes both left and right images are combined by the camera,
 # which is what most stereoscopic cameras will do)
-STEREO_CAM_WIDTH = 2560
-STEREO_CAM_HEIGHT = 960
+STEREO_CAM_WIDTH = 1280
+STEREO_CAM_HEIGHT = 470
 # camera fov in degrees, for horizontal and vertical, max should be 180
 INDIVIDUAL_CAMERA_FOV_X = 120
 INDIVIDUAL_CAMERA_FOV_Y = 60
