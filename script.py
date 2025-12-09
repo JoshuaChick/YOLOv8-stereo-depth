@@ -210,7 +210,7 @@ if __name__ == '__main__':
     # lower three lines set a custom video resolution, if you want cv2's default, uncomment first and comment out
     # lower three
     # cam = cv2.VideoCapture(0)
-    cam = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    cam = cv2.VideoCapture(0)
     cam.set(cv2.CAP_PROP_FRAME_WIDTH, STEREO_CAM_WIDTH)
     cam.set(cv2.CAP_PROP_FRAME_HEIGHT, STEREO_CAM_HEIGHT)
 
